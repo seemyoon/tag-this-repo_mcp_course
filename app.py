@@ -182,11 +182,11 @@ def create_gradio_app():
 
 # Mount Gradio app
 gradio_app = create_gradio_app()
-app = gr.mount_gradio_app(app, gradio_app, path="/gradio")
+app = gr.mount_gradio_app(app, gradio_app, path="/")
 
 
 if __name__ == "__main__":
     print("🚀 Starting HF Discussion Bot with Tiny Agents...")
-    print("📊 Dashboard: http://localhost:7860/gradio")
+    print("📊 Dashboard: http://localhost:7860")
     print("🔗 Webhook: http://localhost:7860/webhook")
     uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
