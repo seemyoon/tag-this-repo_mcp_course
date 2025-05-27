@@ -7,7 +7,7 @@ sdk: gradio
 sdk_version: 5.31.0
 app_file: app.py
 pinned: false
-base_path: /
+base_path: /gradio
 ---
 
 # 🤖 Hugging Face Discussion Bot
