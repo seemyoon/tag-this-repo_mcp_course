@@ -182,7 +182,7 @@ def create_gradio_app():
 
 # Mount Gradio app
 gradio_app = create_gradio_app()
-app = gr.mount_gradio_app(app, gradio_app, path="/")
+app = gr.mount_gradio_app(app, gradio_app, path="/gradio")
 
 
 if __name__ == "__main__":
