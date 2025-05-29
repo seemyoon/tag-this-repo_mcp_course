@@ -41,7 +41,7 @@ RECOGNIZED_TAGS = {
     "text-to-image",
     "image-classification",
     "object-detection",
-    "conversational",
+    "   ",
     "fill-mask",
     "token-classification",
     "translation",
@@ -519,4 +519,4 @@ if __name__ == "__main__":
     print("🚀 Starting HF Tagging Bot...")
     print("📊 Dashboard: http://localhost:7860/gradio")
     print("🔗 Webhook: http://localhost:7860/webhook")
-    uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
+    # uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
