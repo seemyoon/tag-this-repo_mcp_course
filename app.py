@@ -148,7 +148,8 @@ async def process_webhook_comment(webhook_data: Dict[str, Any]):
     discussion_title = webhook_data["discussion"]["title"]
     repo_name = webhook_data["repo"]["name"]
     discussion_num = webhook_data["discussion"]["num"]
-    comment_author = webhook_data["comment"]["author"]
+    # Author is an object with "id" field
+    comment_author = webhook_data["comment"]["author"].get("id", "unknown")
 
     # Extract potential tags from the comment and discussion title
     comment_tags = extract_tags_from_text(comment_content)
@@ -215,7 +216,7 @@ async def process_webhook_comment(webhook_data: Dict[str, Any]):
                             # If no JSON found, use the response as is
                             msg = f"Tag '{tag}': {response_text}"
 
-                    except Exception as parse_error:
+                    except Exception:
                         msg = f"Tag '{tag}': Response parse error - {response_text}"
 
                     result_messages.append(msg)
@@ -249,16 +250,40 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
     """Handle HF Hub webhooks"""
     webhook_secret = request.headers.get("X-Webhook-Secret")
     if webhook_secret != WEBHOOK_SECRET:
+        print("❌ Invalid webhook secret")
         return {"error": "Invalid webhook secret"}
 
     payload = await request.json()
-    event = payload.get("event", {})
+    print(f"📥 Received webhook payload: {json.dumps(payload, indent=2)}")
 
-    scope_check = event.get("scope") == "discussion.comment"
-    if event.get("action") == "create" and scope_check:
+    event = payload.get("event", {})
+    scope = event.get("scope")
+    action = event.get("action")
+
+    print(f"🔍 Event details - scope: {scope}, action: {action}")
+
+    # Check if this is a discussion comment creation
+    scope_check = scope == "discussion"
+    action_check = action == "create"
+
+    print(f"✅ scope_check: {scope_check}")
+    print(f"✅ action_check: {action_check}")
+
+    if scope_check and action_check:
+        # Verify we have the required fields
+        required_fields = ["comment", "discussion", "repo"]
+        missing_fields = [field for field in required_fields if field not in payload]
+
+        if missing_fields:
+            error_msg = f"Missing required fields: {missing_fields}"
+            print(f"❌ {error_msg}")
+            return {"error": error_msg}
+
+        print(f"🚀 Processing webhook for repo: {payload['repo']['name']}")
         background_tasks.add_task(process_webhook_comment, payload)
         return {"status": "processing"}
 
+    print(f"⏭️ Ignoring webhook - scope: {scope}, action: {action}")
     return {"status": "ignored"}
 
 
@@ -270,17 +295,25 @@ async def simulate_webhook(
         return "Please fill in all fields."
 
     mock_payload = {
-        "event": {"action": "create", "scope": "discussion.comment"},
+        "event": {"action": "create", "scope": "discussion"},
         "comment": {
             "content": comment_content,
-            "author": "test-user",
-            "created_at": datetime.now().isoformat(),
+            "author": {"id": "test-user-id"},
+            "id": "mock-comment-id",
+            "hidden": False,
         },
         "discussion": {
             "title": discussion_title,
             "num": len(tag_operations_store) + 1,
+            "id": "mock-discussion-id",
+            "status": "open",
+            "isPullRequest": False,
         },
-        "repo": {"name": repo_name},
+        "repo": {
+            "name": repo_name,
+            "type": "model",
+            "private": False,
+        },
     }
 
     response = await process_webhook_comment(mock_payload)
@@ -326,7 +359,7 @@ def create_gradio_app():
             sim_result = gr.Textbox(label="Result", lines=8)
 
         sim_btn.click(
-            simulate_webhook,
+            fn=simulate_webhook,
             inputs=[sim_repo, sim_title, sim_comment],
             outputs=sim_result,
         )
