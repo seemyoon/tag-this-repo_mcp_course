@@ -403,7 +403,9 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
     # Check if this is a discussion comment creation
     scope_check = scope == "discussion"
     action_check = action == "create"
-
+    not_pr = not payload["discussion"]["isPullRequest"]
+    scope_check = scope_check and not_pr
+    
     print(f"✅ scope_check: {scope_check}")
     print(f"✅ action_check: {action_check}")
 
@@ -519,4 +521,4 @@ if __name__ == "__main__":
     print("🚀 Starting HF Tagging Bot...")
     print("📊 Dashboard: http://localhost:7860/gradio")
     print("🔗 Webhook: http://localhost:7860/webhook")
-    # uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=7860, reload=True)
