@@ -25,12 +25,19 @@ mcp = FastMCP("hf-tagging-bot")
 @mcp.tool()
 def get_current_tags(repo_id: str) -> str:
     """Get current tags from a HuggingFace model repository"""
+    print(f"🔧 get_current_tags called with repo_id: {repo_id}")
+
     if not hf_api:
-        return json.dumps({"error": "HF token not configured"})
+        error_result = {"error": "HF token not configured"}
+        json_str = json.dumps(error_result)
+        print(f"❌ No HF API token - returning: {json_str}")
+        return json_str
 
     try:
+        print(f"📡 Fetching model info for: {repo_id}")
         info = model_info(repo_id=repo_id, token=HF_TOKEN)
         current_tags = info.tags if info.tags else []
+        print(f"🏷️ Found {len(current_tags)} tags: {current_tags}")
 
         result = {
             "status": "success",
@@ -38,45 +45,63 @@ def get_current_tags(repo_id: str) -> str:
             "current_tags": current_tags,
             "count": len(current_tags),
         }
-        return json.dumps(result)
+        json_str = json.dumps(result)
+        print(f"✅ get_current_tags returning: {json_str}")
+        return json_str
 
     except Exception as e:
+        print(f"❌ Error in get_current_tags: {str(e)}")
         error_result = {"status": "error", "repo_id": repo_id, "error": str(e)}
-        return json.dumps(error_result)
+        json_str = json.dumps(error_result)
+        print(f"❌ get_current_tags error returning: {json_str}")
+        return json_str
 
 
 @mcp.tool()
 def add_new_tag(repo_id: str, new_tag: str) -> str:
     """Add a new tag to a HuggingFace model repository via PR"""
+    print(f"🔧 add_new_tag called with repo_id: {repo_id}, new_tag: {new_tag}")
+
     if not hf_api:
-        return json.dumps({"error": "HF token not configured"})
+        error_result = {"error": "HF token not configured"}
+        json_str = json.dumps(error_result)
+        print(f"❌ No HF API token - returning: {json_str}")
+        return json_str
 
     try:
         # Get current model info and tags
+        print(f"📡 Fetching current model info for: {repo_id}")
         info = model_info(repo_id=repo_id, token=HF_TOKEN)
         current_tags = info.tags if info.tags else []
+        print(f"🏷️ Current tags: {current_tags}")
 
         # Check if tag already exists
         if new_tag in current_tags:
+            print(f"⚠️ Tag '{new_tag}' already exists in {current_tags}")
             result = {
                 "status": "already_exists",
                 "repo_id": repo_id,
                 "tag": new_tag,
                 "message": f"Tag '{new_tag}' already exists",
             }
-            return json.dumps(result)
+            json_str = json.dumps(result)
+            print(f"🏷️ add_new_tag (already exists) returning: {json_str}")
+            return json_str
 
         # Add the new tag to existing tags
         updated_tags = current_tags + [new_tag]
+        print(f"🆕 Will update tags from {current_tags} to {updated_tags}")
 
         # Create model card content with updated tags
         try:
             # Load existing model card
+            print(f"📄 Loading existing model card...")
             card = ModelCard.load(repo_id, token=HF_TOKEN)
             if not hasattr(card, "data") or card.data is None:
                 card.data = ModelCardData()
         except HfHubHTTPError:
             # Create new model card if none exists
+            print(f"📄 Creating new model card (none exists)")
             card = ModelCard("")
             card.data = ModelCardData()
 
@@ -100,6 +125,8 @@ This PR adds the `{new_tag}` tag to the model repository.
 **New tags:** {", ".join(updated_tags)}
 """
 
+        print(f"🚀 Creating PR with title: {pr_title}")
+
         # Create commit with updated model card using CommitOperationAdd
         from huggingface_hub import CommitOperationAdd
 
@@ -120,6 +147,8 @@ This PR adds the `{new_tag}` tag to the model repository.
         pr_url_attr = commit_info.pr_url
         pr_url = pr_url_attr if hasattr(commit_info, "pr_url") else str(commit_info)
 
+        print(f"✅ PR created successfully! URL: {pr_url}")
+
         result = {
             "status": "success",
             "repo_id": repo_id,
@@ -129,16 +158,26 @@ This PR adds the `{new_tag}` tag to the model repository.
             "new_tags": updated_tags,
             "message": f"Created PR to add tag '{new_tag}'",
         }
-        return json.dumps(result)
+        json_str = json.dumps(result)
+        print(f"✅ add_new_tag success returning: {json_str}")
+        return json_str
 
     except Exception as e:
+        print(f"❌ Error in add_new_tag: {str(e)}")
+        print(f"❌ Error type: {type(e)}")
+        import traceback
+
+        print(f"❌ Traceback: {traceback.format_exc()}")
+
         error_result = {
             "status": "error",
             "repo_id": repo_id,
             "tag": new_tag,
             "error": str(e),
         }
-        return json.dumps(error_result)
+        json_str = json.dumps(error_result)
+        print(f"❌ add_new_tag error returning: {json_str}")
+        return json_str
 
 
 if __name__ == "__main__":
