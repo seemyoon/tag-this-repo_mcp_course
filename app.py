@@ -405,7 +405,7 @@ async def webhook_handler(request: Request, background_tasks: BackgroundTasks):
     action_check = action == "create"
     not_pr = not payload["discussion"]["isPullRequest"]
     scope_check = scope_check and not_pr
-    
+    print(f"✅ not_pr: {not_pr}")
     print(f"✅ scope_check: {scope_check}")
     print(f"✅ action_check: {action_check}")
 
