@@ -100,7 +100,7 @@ async def get_agent():
                         "type": "stdio",
                         "config": {
                             "command": "python",
-                            "args": ["mcp_server.py"],
+                            "args": ["mcp_server.example.py"],
                             "cwd": ".",  # Ensure correct working directory
                             "env": {"HF_TOKEN": HF_TOKEN} if HF_TOKEN else {},
                         },
@@ -281,7 +281,7 @@ Please process all {len(all_tags)} tags: {", ".join(all_tags)}
 
                             # Load the MCP server module
                             spec = importlib.util.spec_from_file_location(
-                                "mcp_server", "./mcp_server.py"
+                                "mcp_server", "mcp_server.example.py"
                             )
                             mcp_module = importlib.util.module_from_spec(spec)
                             spec.loader.exec_module(mcp_module)

@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
 # Copy project files
 COPY pyproject.toml .
 COPY server.py .
-COPY mcp_server.py .
+COPY mcp_server.example.py .
 COPY env.example .
 COPY README.md .
 
